@@ -1,0 +1,72 @@
+name: Check for New Client Releases
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # Run daily, adjust as needed
+
+jobs:
+  check-client-releases:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@master
+        with:
+          ref: main
+
+      - name: Create File if Not Exist
+        run: |
+          if [ ! -f "all_releases.txt" ]; then
+            touch all_releases.txt
+            echo "File created"
+          fi
+
+      - name: Check for Releases
+        id: check-client-releases
+        run: |
+          # Check for New Releases
+          echo "--- Checking Releases ---"
+          REPOS="amr0s/Dhizuku-API-Xposed JingMatrix/LSPatch ImranR98/Obtainium Droid-ify/client NeoApplications/Neo-Store"
+
+          for REPO in $REPOS; do
+            LATEST_RELEASE=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" -H "Accept: application/vnd.github.v3+json")
+            if [[ $LATEST_RELEASE == *"message"* ]]; then
+              echo "Error checking releases for $REPO"
+              continue
+            fi
+            TAG_NAME=$(echo "$LATEST_RELEASE" | jq -r '.tag_name')
+            REPO_NAME=$(echo "$REPO" | cut -d '/' -f 2) # Extract repo name for file storage
+            if [ -z "$TAG_NAME" ]; then
+              echo "No releases found for $REPO"
+            else
+              echo "Current $REPO_NAME Tag: $TAG_NAME"
+              if grep -q "^$REPO_NAME: " all_releases.txt; then
+                EXISTING_TAG=$(grep "^$REPO_NAME: " all_releases.txt | cut -d ' ' -f 2)
+                if [ "$EXISTING_TAG" != "$TAG_NAME" ]; then
+                  sed -i "s|^$REPO_NAME: .*|$REPO_NAME: $TAG_NAME|" all_releases.txt
+                  RELEASES_FOUND=true
+                fi
+              else
+                echo "$REPO_NAME: $TAG_NAME" >> all_releases.txt
+                RELEASES_FOUND=true
+              fi
+            fi
+          done
+
+          if [ "$RELEASES_FOUND" = true ]; then
+            git config --global user.email "action@github.com"
+            git config --global user.name "GitHub Action"
+            git add all_releases.txt
+            git commit -m "Update client and module versions in all_releases.txt"
+            git push
+
+            curl -X POST \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              https://api.github.com/repos/MartinatorTime/Dhizuku-API-Xposed-Patcher/actions/workflows/build-apps.yml/dispatches \
+              -d '{"ref":"main"}'
+          else
+            echo "No changes to commit or trigger the workflow"
+          fi
+        shell: bash

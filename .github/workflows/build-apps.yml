@@ -1,0 +1,196 @@
+name: Download and Patch Apps
+
+on:
+  workflow_call:
+    inputs:
+      patch_Obtainium:
+        description: 'Patch Obtainium'
+        default: true
+        required: true
+        type: boolean
+      patch_Droid-ify:
+        description: 'Patch Droid-ify'
+        default: true
+        required: true
+        type: boolean
+      patch_Neo-Store:
+        description: 'Patch Neo Store'
+        default: true
+        required: true
+        type: boolean
+  workflow_dispatch:
+    inputs:
+      patch_Obtainium:
+        description: 'Patch Obtainium'
+        default: true
+        required: true
+        type: boolean
+      patch_Droid-ify:
+        description: 'Patch Droid-ify'
+        default: true
+        required: true
+        type: boolean
+      patch_Neo-Store:
+        description: 'Patch Neo Store'
+        default: true
+        required: true
+        type: boolean
+
+jobs:
+  Clean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Delete all releases
+        run: |
+          gh release list --limit 1000 | awk '{print $1}' | while read tag; do
+            echo "Deleting release: $tag"
+            gh release delete "$tag" -y || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete all tags
+        run: |
+          git fetch --tags
+          git ls-remote --tags origin | awk '{print $2}' | sed 's|refs/tags/||' | while read tag; do
+            echo "Deleting tag: $tag"
+            git push origin --delete "$tag" || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2.1.0
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 0
+          keep_minimum_runs: 0
+
+  build-clients:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+        with:
+          ref: main
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'adopt'
+          java-version: '24'
+
+      - name: Download LSPatch Jar from Github
+        uses: robinraju/release-downloader@v1
+        with:
+          fileName: "lspatch.jar"
+          repository: JingMatrix/LSPatch
+          latest: true
+
+      - name: Download Dhizuku-API-Xposed Module
+        uses: robinraju/release-downloader@v1
+        with:
+          fileName: "DAX*.apk"
+          repository: iamr0s/Dhizuku-API-Xposed
+          latest: true
+
+      - name: Download Obtainium
+        if: ${{ github.event.inputs.patch_Obtainium == 'true' }}
+        uses: robinraju/release-downloader@v1
+        with:
+          fileName: "app-arm64-v8a-release.apk"
+          repository: ImranR98/Obtainium
+          latest: true
+
+      - name: Patch Obtainium
+        if: ${{ github.event.inputs.patch_Obtainium == 'true' }}
+        run: |
+          #Patch Obtainium With Modules
+          java -jar *.jar app-arm64-v8a-release.apk -m DAX*.apk
+          rm app-arm64-v8a-release.apk
+          mv *lspatched.apk Obtainium-patched.apk
+        shell: bash
+
+      - name: Download Droid-ify
+        if: ${{ github.event.inputs.patch_Droid-ify == 'true' }}
+        uses: robinraju/release-downloader@v1
+        with:
+          fileName: "app-release.apk"
+          repository: Droid-ify/client
+          latest: true
+
+      - name: Patch Droid-ify
+        if: ${{ github.event.inputs.patch_Droid-ify == 'true' }}
+        run: |
+          #Patch Droid-ify With Modules
+          java -jar *.jar app-release.apk -m DAX*.apk
+          rm app-release.apk
+          mv *lspatched.apk Droid-ify-patched.apk
+        shell: bash
+
+      - name: Download Neo Store
+        if: ${{ github.event.inputs.patch_Neo-Store == 'true' }}
+        uses: robinraju/release-downloader@v1
+        with:
+          fileName: "Neo_Store_*_release.apk"
+          repository: NeoApplications/Neo-Store
+          latest: true
+
+      - name: Patch Neo Store
+        if: ${{ github.event.inputs.patch_Neo-Store == 'true' }}
+        run: |
+          #Patch Neo Store With Modules
+          java -jar *.jar Neo_Store_*_release.apk -m DAX*.apk
+          rm Neo_Store_*_release.apk
+          mv *lspatched.apk Neo-Store-patched.apk
+        shell: bash
+
+      - name: Create Release Info
+        run: |
+          curl -sSL https://dl.google.com/android/repository/build-tools_r33.0.2-linux.zip -o build-tools.zip
+          unzip -q build-tools.zip -d build-tools
+          AAPT=build-tools/android-13/aapt
+          chmod +x "$AAPT"
+
+          echo "Apps:" >> release_body.txt
+          if [ "${{ github.event.inputs.patch_Obtainium }}" == "true" ]; then
+          OB_INFO=$("$AAPT" dump badging Obtainium-patched.apk | grep versionName)
+          OB_VersionName=$(echo "$OB_INFO" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")
+          OB_VersionCode=$(echo "$OB_INFO" | sed -n "s/.*versionCode='\([^']*\)'.*/\1/p")
+          echo "- Obtainium - $OB_VersionName $OB_VersionCode" >> release_body.txt
+          mv Obtainium-patched.apk Obtainium-$OB_VersionName-patched.apk
+          fi
+          if [ "${{ github.event.inputs.patch_Droid-ify }}" == "true" ]; then
+            DROIDIFY_INFO=$("$AAPT" dump badging Droid-ify-patched.apk | grep versionName)
+            DROIDIFY_VN=$(echo "$DROIDIFY_INFO" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")
+            DROIDIFY_VC=$(echo "$DROIDIFY_INFO" | sed -n "s/.*versionCode='\([^']*\)'.*/\1/p")
+            echo "- Droid-ify - $DROIDIFY_VN $DROIDIFY_VC" >> release_body.txt
+            mv Droid-ify-patched.apk Droid-ify-$DROIDIFY_VN-patched.apk
+          fi
+          if [ "${{ github.event.inputs.patch_Neo-Store }}" == "true" ]; then
+            NEOSTORE_INFO=$("$AAPT" dump badging Neo-Store-patched.apk | grep versionName)
+            NEOSTORE_VN=$(echo "$NEOSTORE_INFO" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")
+            NEOSTORE_VC=$(echo "$NEOSTORE_INFO" | sed -n "s/.*versionCode='\([^']*\)'.*/\1/p")
+            echo "- Neo Store - $NEOSTORE_VN $NEOSTORE_VC" >> release_body.txt
+            mv Neo-Store-patched.apk Neo-Store-$NEOSTORE_VN-patched.apk
+          fi
+          echo "" >> release_body.txt
+          echo "Patched at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> release_body.txt
+        shell: bash
+
+      - name: Upload Release
+        id: upload_release
+        uses: softprops/action-gh-release@master
+        with:
+          files: |
+            *patched.apk
+          tag_name: Dhizuku-API-patched
+          draft: false
+          body_path: release_body.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
