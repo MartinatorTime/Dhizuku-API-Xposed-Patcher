@@ -82,6 +82,10 @@ jobs:
           repository: JingMatrix/LSPatch
           latest: true
 
+      - name: Rename LSPatch Jar from Github
+        run: mv lspatch.jar patcher.jar
+        shell: bash
+
       - name: Download Uber-apk-signer Jar from Github
         uses: robinraju/release-downloader@v1
         with:
