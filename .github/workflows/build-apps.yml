@@ -111,7 +111,7 @@ jobs:
         if: ${{ github.event.inputs.patch_Obtainium == 'true' }}
         run: |
           #Patch Obtainium With Modules
-          java -jar *.jar -f -l 1 app-arm64-v8a-release.apk -m DAX*.apk
+          java -jar *.jar -f -l 0 --injectdex app-arm64-v8a-release.apk -m DAX*.apk
           rm app-arm64-v8a-release.apk
           mv *lspatched.apk Obtainium-patched.apk
         shell: bash
@@ -128,7 +128,7 @@ jobs:
         if: ${{ github.event.inputs.patch_Droid-ify == 'true' }}
         run: |
           #Patch Droid-ify With Modules
-          java -jar *.jar -f -l 1 app-release.apk -m DAX*.apk
+          java -jar *.jar -f -l 0 --injectdex app-release.apk -m DAX*.apk
           rm app-release.apk
           mv *lspatched.apk Droid-ify-patched.apk
         shell: bash
@@ -145,7 +145,7 @@ jobs:
         if: ${{ github.event.inputs.patch_Neo-Store == 'true' }}
         run: |
           #Patch Neo Store With Modules
-          java -jar *.jar -f -l 1 Neo_Store_*_release.apk -m DAX*.apk
+          java -jar *.jar -f -l 0 --injectdexNeo_Store_*_release.apk -m DAX*.apk
           rm Neo_Store_*_release.apk
           mv *lspatched.apk Neo-Store-patched.apk
         shell: bash
