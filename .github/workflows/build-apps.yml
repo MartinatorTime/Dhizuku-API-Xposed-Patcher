@@ -161,6 +161,13 @@ jobs:
           patch_and_sign "Droid-ify.apk" "Droid-ify-patched.apk"
         shell: bash
 
+      - name: Setup Android Build Tools
+        run: |
+          mkdir -p $HOME/android-tools
+          curl -sSL https://dl.google.com/android/repository/build-tools_r33.0.2-linux.zip -o build-tools.zip
+          unzip -q build-tools.zip -d $HOME/android-tools
+
+
       - name: Create Release Info
         run: |
           AAPT=$HOME/android-tools/android-13/aapt
