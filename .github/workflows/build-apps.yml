@@ -121,8 +121,8 @@ jobs:
           java -jar lspatch.jar -f -d -l 1 --injectdex -m DAX*.apk app-arm64-v8a-release.apk
           
           # 2. Sign the patched APK
-          # --debug-key uses the standard Android debug keystore
-          java -jar uber-apk-signer-1.3.0.jar --apks *-lspatched.apk --debug-key
+          # --allowResign uses the standard Android debug keystore
+          java -jar uber-apk-signer-1.3.0.jar --apks *-lspatched.apk --allowResign
           
           # 4. Clean up
           mv *-aligned-debugSigned.apk Obtainium-patched.apk
@@ -144,7 +144,7 @@ jobs:
           java -jar lspatch.jar -f -d -l 1 --injectdex -m DAX*.apk app-release.apk
           
           # 2. Sign and Align
-          java -jar uber-apk-signer-1.3.0.jar --apks *-lspatched.apk --debug-key
+          java -jar uber-apk-signer-1.3.0.jar --apks *-lspatched.apk --allowResign
           
           # 3. Clean up
           mv *-aligned-debugSigned.apk Droid-ify-patched.apk
@@ -166,7 +166,7 @@ jobs:
           java -jar lspatch.jar -f -d -l 1 --injectdex -m DAX*.apk Neo_Store_*_release.apk
           
           # 2. Sign and Align
-          java -jar uber-apk-signer-1.3.0.jar --apks *-lspatched.apk --debug-key
+          java -jar uber-apk-signer-1.3.0.jar --apks *-lspatched.apk --allowResign
           
           # 3. Clean up
           mv *-aligned-debugSigned.apk Neo-Store-patched.apk
