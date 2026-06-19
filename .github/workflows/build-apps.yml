@@ -194,7 +194,8 @@ jobs:
         uses: softprops/action-gh-release@master
         with:
           files: |
-            *patched.apk
+            Droid-ify*.apk
+            Neo-Store*.apk
           tag_name: Dhizuku-API-patched
           draft: false
           body_path: release_body.txt
