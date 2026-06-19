@@ -110,10 +110,18 @@ jobs:
       - name: Patch Obtainium
         if: ${{ github.event.inputs.patch_Obtainium == 'true' }}
         run: |
-          #Patch Obtainium With Modules
-          java -jar *.jar -f -l 0 --injectdex app-arm64-v8a-release.apk -m DAX*.apk
-          rm app-arm64-v8a-release.apk
-          mv *lspatched.apk Obtainium-patched.apk
+          # 1. Patch with LSPatch (Use -d for debuggable)
+          java -jar *.jar -f -d -l 1 -m DAX*.apk app-arm64-v8a-release.apk
+          
+          # 2. Extract the patched file name
+          mv *lspatched.apk Obtainium-patched-unsigned.apk
+          
+          # 3. Use the Android SDK's 'apksigner' to sign with a debug key
+          # We use the built-in 'testkey' which is standard for Android debug builds
+          # 'apksigner' is usually available if you have the build-tools installed
+          $HOME/android-tools/android-13/apksigner sign --key $HOME/android-tools/android-13/lib/testkey.pk8 --cert $HOME/android-tools/android-13/lib/testkey.x509.pem Obtainium-patched-unsigned.apk
+          
+          mv Obtainium-patched-unsigned.apk Obtainium-patched.apk
         shell: bash
 
       - name: Download Droid-ify
@@ -127,10 +135,18 @@ jobs:
       - name: Patch Droid-ify
         if: ${{ github.event.inputs.patch_Droid-ify == 'true' }}
         run: |
-          #Patch Droid-ify With Modules
-          java -jar *.jar -f -l 0 --injectdex app-release.apk -m DAX*.apk
-          rm app-release.apk
-          mv *lspatched.apk Droid-ify-patched.apk
+          # 1. Patch with LSPatch (Use -d for debuggable)
+          java -jar *.jar -f -d -l 1 -m DAX*.apk app-release.apk
+          
+          # 2. Extract the patched file name
+          mv *lspatched.apk Droid-ify-patched-unsigned.apk
+          
+          # 3. Use the Android SDK's 'apksigner' to sign with a debug key
+          # We use the built-in 'testkey' which is standard for Android debug builds
+          # 'apksigner' is usually available if you have the build-tools installed
+          $HOME/android-tools/android-13/apksigner sign --key $HOME/android-tools/android-13/lib/testkey.pk8 --cert $HOME/android-tools/android-13/lib/testkey.x509.pem Droid-ify-patched-unsigned.apk
+          
+          mv Droid-ify-patched-unsigned.apk Droid-ify-patched.apk
         shell: bash
 
       - name: Download Neo Store
@@ -144,10 +160,18 @@ jobs:
       - name: Patch Neo Store
         if: ${{ github.event.inputs.patch_Neo-Store == 'true' }}
         run: |
-          #Patch Neo Store With Modules
-          java -jar *.jar -f -l 0 --injectdex Neo_Store_*_release.apk -m DAX*.apk
-          rm Neo_Store_*_release.apk
-          mv *lspatched.apk Neo-Store-patched.apk
+          # 1. Patch with LSPatch (Use -d for debuggable)
+          java -jar *.jar -f -d -l 1 -m DAX*.apk Neo_Store_*_release.apk
+          
+          # 2. Extract the patched file name
+          mv *lspatched.apk Neo-Store-patched-unsigned.apk
+          
+          # 3. Use the Android SDK's 'apksigner' to sign with a debug key
+          # We use the built-in 'testkey' which is standard for Android debug builds
+          # 'apksigner' is usually available if you have the build-tools installed
+          $HOME/android-tools/android-13/apksigner sign --key $HOME/android-tools/android-13/lib/testkey.pk8 --cert $HOME/android-tools/android-13/lib/testkey.x509.pem Neo-Store-patched-unsigned.apk
+          
+          mv Neo-Store-patched-unsigned.apk Neo-Store-patched.apk
         shell: bash
 
       - name: Create Release Info
