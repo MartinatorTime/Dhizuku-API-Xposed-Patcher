@@ -136,7 +136,7 @@ jobs:
             fi
             
             # 1. Patch
-            java -jar patcher.jar -f -l 0 "$input_apk" $(cat module_list.txt)
+            java -jar patcher.jar -f -l 0 "$input_apk" -m DAX*.apk
             
             local patched_apk=$(ls *-lspatched.apk 2>/dev/null | head -n 1)
             
