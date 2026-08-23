@@ -1,4 +1,4 @@
 LSPatch: v1.1
 Obtainium: v1.6.10
-client: v0.7.5
+client: v0.7.6
 Neo-Store: 1.2.6
